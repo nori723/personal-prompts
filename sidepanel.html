@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>提示词 · 个人提示词库</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body class="panel-body">
+  <main class="panel-shell" id="mainView">
+
+    <div class="toolbar">
+      <label class="search-box">
+        <svg class="search-icon" viewBox="0 0 24 24" aria-hidden="true">
+          <circle cx="11" cy="11" r="7"></circle>
+          <path d="m20 20-3.5-3.5"></path>
+        </svg>
+        <span class="sr-only">搜索</span>
+        <input id="searchInput" type="search" placeholder="搜索标题或正文" autocomplete="off">
+      </label>
+      <button class="primary-button" id="newItemButton" type="button">新建</button>
+    </div>
+
+    <div class="error-banner" id="errorBanner" hidden>
+      <span id="errorBannerText"></span>
+    </div>
+
+    <nav class="category-bar" aria-label="分类">
+      <div class="category-chips" id="categoryChips"></div>
+      <button class="text-button" id="manageCategoriesButton" type="button">管理</button>
+      <button class="icon-button bar-icon-button" id="openSettingsButton" type="button" title="设置" aria-label="设置">
+        <svg class="button-icon" viewBox="0 0 24 24" aria-hidden="true">
+          <path d="M12 15.5a3.5 3.5 0 1 0 0-7 3.5 3.5 0 0 0 0 7Z"></path>
+          <path d="M19.4 15a1.7 1.7 0 0 0 .34 1.88l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.7 1.7 0 0 0-1.88-.34 1.7 1.7 0 0 0-1.03 1.56V21a2 2 0 1 1-4 0v-.09a1.7 1.7 0 0 0-1.03-1.56 1.7 1.7 0 0 0-1.88.34l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.7 1.7 0 0 0 4.6 15a1.7 1.7 0 0 0-1.56-1.03H3a2 2 0 1 1 0-4h.09A1.7 1.7 0 0 0 4.6 8a1.7 1.7 0 0 0-.34-1.88l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.7 1.7 0 0 0 8.97 3.6 1.7 1.7 0 0 0 10 2.04V2a2 2 0 1 1 4 0v.09a1.7 1.7 0 0 0 1.03 1.56 1.7 1.7 0 0 0 1.88-.34l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.7 1.7 0 0 0 19.4 8c.22.62.8 1 1.46 1H21a2 2 0 1 1 0 4h-.09A1.7 1.7 0 0 0 19.4 15Z"></path>
+        </svg>
+      </button>
+    </nav>
+
+    <section class="list-scroll">
+      <div class="prompt-list" id="promptList"></div>
+    </section>
+
+  </main>
+
+  <section class="settings-page" id="settingsPage" hidden>
+    <header class="settings-header">
+      <button class="icon-button" id="backToMainButton" type="button" title="返回" aria-label="返回">
+        <svg class="button-icon" viewBox="0 0 24 24" aria-hidden="true">
+          <path d="m15 18-6-6 6-6"></path>
+        </svg>
+      </button>
+      <h1>设置</h1>
+    </header>
+
+    <div class="settings-stack">
+      <section class="settings-card">
+        <h2>备份与恢复</h2>
+        <p class="settings-hint">数据保存在浏览器本地。建议定期导出 JSON 文件备份；导入时会与现有数据合并，同一条提示词（相同 ID）会被备份文件中的版本更新，其余现有内容不受影响。</p>
+        <div class="settings-actions">
+          <button class="secondary-button" id="exportButton" type="button">导出备份</button>
+          <label class="secondary-button file-button">
+            导入备份
+            <input type="file" id="importInput" accept="application/json,.json">
+          </label>
+        </div>
+      </section>
+
+      <section class="settings-card">
+        <h2>数据</h2>
+        <p class="settings-hint" id="dataStats">共 0 条提示词，0 个分类。</p>
+        <div class="settings-actions">
+          <button class="secondary-button" id="purgeSeedsButton" type="button" hidden>清理内置公共提示词</button>
+          <button class="secondary-button danger-button" id="deleteAllButton" type="button">清空全部提示词</button>
+        </div>
+      </section>
+
+      <section class="settings-card">
+        <h2>关于</h2>
+        <p class="settings-hint">个人提示词库，所有数据仅保存在本机浏览器中，不联网、不上传。</p>
+      </section>
+    </div>
+  </section>
+
+  <dialog class="editor-dialog" id="editorDialog">
+    <form class="editor-panel" id="editorForm" novalidate>
+      <input type="hidden" id="itemId">
+      <div class="editor-heading" id="editorHeading" title="按住此处可上下拖动窗口">
+        <div class="editor-heading-left">
+          <span class="drag-grip" aria-hidden="true">
+            <svg viewBox="0 0 8 14">
+              <circle cx="2" cy="2" r="1.3"></circle>
+              <circle cx="6" cy="2" r="1.3"></circle>
+              <circle cx="2" cy="7" r="1.3"></circle>
+              <circle cx="6" cy="7" r="1.3"></circle>
+              <circle cx="2" cy="12" r="1.3"></circle>
+              <circle cx="6" cy="12" r="1.3"></circle>
+            </svg>
+          </span>
+          <h2 id="editorTitle">新建提示词</h2>
+        </div>
+        <button type="button" class="icon-button" id="editorCopyButton" title="复制全文" aria-label="复制全文">
+          <svg class="button-icon" viewBox="0 0 24 24" aria-hidden="true">
+            <rect x="9" y="9" width="12" height="12" rx="2"></rect>
+            <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+          </svg>
+        </button>
+      </div>
+
+      <label class="field">
+        <span>标题</span>
+        <input id="titleInput" type="text" maxlength="100" placeholder="给提示词起个名字">
+      </label>
+
+      <div class="field-row">
+        <label class="field field-category">
+          <span>分类</span>
+          <select id="categorySelect"></select>
+        </label>
+
+        <label class="field field-pin">
+          <span>置顶</span>
+          <button type="button" class="switch-button" id="pinToggle" role="switch" aria-checked="false">
+            <span class="switch-track" aria-hidden="true"><span></span></span>
+          </button>
+        </label>
+      </div>
+
+      <label class="field field-content">
+        <span>正文</span>
+        <textarea id="contentInput" placeholder="输入提示词正文，支持多行与换行"></textarea>
+      </label>
+
+      <p class="editor-timestamps" id="editorTimestamps"></p>
+
+      <div class="editor-actions">
+        <button type="button" class="secondary-button danger-button" id="deleteButton" hidden>删除</button>
+        <span class="editor-actions-spacer"></span>
+        <button type="button" class="secondary-button" id="cancelButton">取消</button>
+        <button type="submit" class="primary-button" id="saveButton">保存</button>
+      </div>
+
+      <p class="status-line" id="statusLine" role="status"></p>
+    </form>
+  </dialog>
+
+  <dialog class="manager-dialog" id="categoryDialog">
+    <form class="manager-panel" id="categoryForm">
+      <div class="editor-heading">
+        <h2>管理分类</h2>
+        <button type="button" class="icon-button" id="closeCategoryDialogButton" title="关闭" aria-label="关闭">
+          <svg class="button-icon" viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M18 6 6 18"></path>
+            <path d="m6 6 12 12"></path>
+          </svg>
+        </button>
+      </div>
+
+      <div class="category-add-row">
+        <input id="newCategoryInput" type="text" maxlength="20" placeholder="新分类名称">
+        <button type="submit" class="secondary-button" id="addCategoryButton">添加</button>
+      </div>
+
+      <ul class="category-manage-list" id="categoryManageList"></ul>
+
+      <p class="manager-hint">删除分类时，该分类下的提示词会自动移入「未分类」，不会丢失。</p>
+    </form>
+  </dialog>
+
+  <dialog class="confirm-dialog" id="confirmDialog">
+    <div class="confirm-panel">
+      <h2 id="confirmTitle"></h2>
+      <p id="confirmMessage"></p>
+      <div class="editor-actions">
+        <span class="editor-actions-spacer"></span>
+        <button type="button" class="secondary-button" id="confirmCancelButton">取消</button>
+        <button type="button" class="primary-button" id="confirmOkButton">确定</button>
+      </div>
+    </div>
+  </dialog>
+
+  <div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+  <script src="storage.js"></script>
+  <script src="sidepanel.js"></script>
+</body>
+</html>
